@@ -1,0 +1,28 @@
+﻿@page
+@model Client.Pages.FetchDataModel
+@{
+}
+
+<div>
+    <h1>Dummy Data Display</h1>
+
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <td>Id</td>
+                <td>Data</td>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var item in Model.LstSeedData)
+            {
+                <tr>
+                    <td>@item.ID</td>
+                    <td>@item.Name</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+</div>
