@@ -1,24 +1,18 @@
-using Client.Classes;
 using Client.Classes.Authorization;
+using Client.Classes;
 using Client.PageModels;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Newtonsoft.Json;
 
 namespace Client.Pages
 {
-    [Authorize(Policy = "MustBelongToAdministration")]
-    public class FetchDataModel : PageModel
+    public class TestingJwtModel : PageModel
     {
         private readonly IHttpClientFactory m_httpClientFactory;
-
-        [BindProperty]
-        public List<SeedData> LstSeedData { get; set; }
-
-        public FetchDataModel(IHttpClientFactory httpClientFactory)
+        public TestingJwtModel(IHttpClientFactory httpClientFactory)
         {
-            m_httpClientFactory = httpClientFactory;
+            this.m_httpClientFactory = httpClientFactory;
         }
 
         public async Task OnGetAsync()
@@ -35,15 +29,7 @@ namespace Client.Pages
             var token = JsonConvert.DeserializeObject<JwtToken>(stJwt);
 
             httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token?.AccessToken ?? string.Empty);
-
-            try
-            {
-                LstSeedData = await httpClient.GetFromJsonAsync<List<SeedData>>("FetchData");
-            }
-            catch (Exception ex)
-            {
-
-            }
+            var items = await httpClient.GetFromJsonAsync<List<SeedData>>("FetchData");
         }
     }
 }

@@ -1,4 +1,5 @@
 using Client.Classes;
+using Client.Classes.Authenticate;
 using Client.Classes.Authorization;
 using Client.PageModels;
 using Microsoft.AspNetCore.Authorization;
@@ -11,6 +12,9 @@ namespace Client.Pages
     [Authorize(Policy = "MustBelongToAdministration")]
     public class AdministrationModel : PageModel
     {
+        [BindProperty]
+        public List<SeedData> LstSeedData { get; set; }
+
         private readonly IHttpClientFactory m_httpClientFactory;
         public AdministrationModel(IHttpClientFactory httpClientFactory)
         {
@@ -19,19 +23,35 @@ namespace Client.Pages
 
         public async Task OnGetAsync()
         {
-            var httpClient = m_httpClientFactory.CreateClient("WebAPIClient");
-            var res = await httpClient.PostAsJsonAsync("auth", new Credential()
+            JwtToken jwtToken = new JwtToken();
+
+            var strTokenObj = HttpContext.Session.GetString("access_token");
+
+            if (string.IsNullOrEmpty(strTokenObj))
             {
-                Username = "admin@gmail.com",
-                Password = "123"
-            });
-            res.EnsureSuccessStatusCode();
+                jwtToken = await AuthenticationUtility.Authenticate(m_httpClientFactory, "admin@gmail.com", "123");
+            }
+            else
+            {
+                jwtToken = JsonConvert.DeserializeObject<JwtToken>(strTokenObj) ?? new JwtToken();
+            }
 
-            string stJwt = await res.Content.ReadAsStringAsync();
-            var token = JsonConvert.DeserializeObject<JwtToken>(stJwt);
 
-            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token?.AccessToken ?? string.Empty);
-            var items = await httpClient.GetFromJsonAsync<List<SeedData>>("api/FetchData");
+            if (jwtToken == null ||
+                string.IsNullOrWhiteSpace(jwtToken.AccessToken))
+            {
+                DateTime expiryDate = DateTime.MinValue;
+
+                if (expiryDate <= DateTime.UtcNow)
+                {
+                    jwtToken = await AuthenticationUtility.Authenticate(m_httpClientFactory, "admin@gmail.com", "123");
+                }
+            }
+
+            var httpClient = m_httpClientFactory.CreateClient("WebAPIClient");
+           
+            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwtToken?.AccessToken ?? string.Empty);
+            LstSeedData = await httpClient.GetFromJsonAsync<List<SeedData>>("FetchData");
         }
     }
 }

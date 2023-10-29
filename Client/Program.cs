@@ -34,7 +34,15 @@ builder.Services.AddAuthorization(authorizationOptions =>
 
 builder.Services.AddHttpClient("WebAPIClient", options =>
 {
-    options.BaseAddress = new Uri("http://localhost:5230/");
+    options.BaseAddress = new Uri("http://localhost:5230/api/");
+});
+
+builder.Services.AddSession(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.IsEssential = true;
+
 });
 
 var app = builder.Build();
@@ -49,6 +57,8 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthorization();
+
+app.UseSession();
 
 app.MapRazorPages();
 

@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Security.Claims;
 using Client.Classes;
+using Client.Classes.Authorization;
+using Newtonsoft.Json;
+using System.Net.Http;
 
 namespace Client.Pages.Account
 {
@@ -11,6 +14,13 @@ namespace Client.Pages.Account
     {
         [BindProperty]
         public Credential Credential { get; set; }
+
+        private readonly IHttpClientFactory m_httpClientFactory;
+        public LoginModel(IHttpClientFactory httpClientFactory)
+        {
+            this.m_httpClientFactory = httpClientFactory;
+        }
+
         public void OnGet()
         {
         }
@@ -39,6 +49,7 @@ namespace Client.Pages.Account
                 };
 
                 await HttpContext.SignInAsync(Classes.Constants.CookieSchemeName, claimsPrincipal, authProperties);
+                await Authenticate(Credential.Username, Credential.Password);
 
                 return RedirectToPage("/Index");
             }
@@ -63,11 +74,29 @@ namespace Client.Pages.Account
                 };
 
                 await HttpContext.SignInAsync(Classes.Constants.CookieSchemeName, claimsPrincipal, authProperties);
+                await Authenticate(Credential.Username, Credential.Password);
 
                 return RedirectToPage("/Index");
             }
 
             return Page();
+        }
+
+        private async Task<JwtToken> Authenticate(string stUser, string stPassword)
+        {
+            var httpClient = m_httpClientFactory.CreateClient("WebAPIClient");
+            var res = await httpClient.PostAsJsonAsync("auth", new Credential()
+            {
+                Username = stUser,
+                Password = stPassword
+            });
+
+            res.EnsureSuccessStatusCode();
+
+            string stJwt = await res.Content.ReadAsStringAsync();
+            HttpContext.Session.SetString("access_token", stJwt);
+
+            return JsonConvert.DeserializeObject<JwtToken>(stJwt) ?? new JwtToken();
         }
     }
 }
