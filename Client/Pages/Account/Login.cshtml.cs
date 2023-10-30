@@ -45,7 +45,7 @@ namespace Client.Pages.Account
 
                 var authProperties = new AuthenticationProperties
                 {
-                    IsPersistent = true,
+                    IsPersistent = Credential.RememberMe,
                 };
 
                 await HttpContext.SignInAsync(Classes.Constants.CookieSchemeName, claimsPrincipal, authProperties);
@@ -70,7 +70,7 @@ namespace Client.Pages.Account
 
                 var authProperties = new AuthenticationProperties
                 {
-                    IsPersistent = true,
+                    IsPersistent = Credential.RememberMe,
                 };
 
                 await HttpContext.SignInAsync(Classes.Constants.CookieSchemeName, claimsPrincipal, authProperties);
